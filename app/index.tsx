@@ -664,63 +664,38 @@ export default function WelcomeScreen() {
             })}
           </View>
 
-          {/* 6. ACTION BUTTONS: OFFICIAL GOOGLE SIGN IN & OPEN DASHBOARD */}
+          {/* 6. ACTION BUTTONS: OFFICIAL GOOGLE SIGN IN & GET STARTED / OPEN DASHBOARD */}
           <View style={[styles.ctaSection, isMobile && styles.ctaSectionMobile]}>
-            {/* Primary Action: Official Google Sign-In Button */}
+            {/* Official Google Sign-In Button */}
             <GoogleSignInButton
               style={styles.googleCtaBtn}
               onPress={handleGoogleSignIn}
-              label={accounts.length > 0 ? "Add another Google account" : "Sign in with Google"}
+              label="Sign in with Google"
             />
 
-            {/* Secondary Action: Open Dashboard / Get Started */}
-            {accounts.length > 0 ? (
-              <TouchableOpacity
+            {/* Get Started / Open Dashboard */}
+            <TouchableOpacity
+              style={[
+                styles.primaryCtaBtn,
+                {
+                  backgroundColor: colors.primaryBtnBg,
+                  shadowColor: colors.primaryBtnShadow,
+                },
+              ]}
+              onPress={() => router.push('/dashboard')}
+              activeOpacity={0.7}
+              {...(Platform.OS === 'web' ? ({ className: 'glow-on-click' } as any) : {})}
+            >
+              <Text
                 style={[
-                  styles.primaryCtaBtn,
-                  {
-                    backgroundColor: colors.primaryBtnBg,
-                    shadowColor: colors.primaryBtnShadow,
-                  },
+                  styles.primaryCtaText,
+                  { color: colors.primaryBtnText },
                 ]}
-                onPress={() => router.push('/dashboard')}
-                activeOpacity={0.7}
-                {...(Platform.OS === 'web' ? ({ className: 'glow-on-click' } as any) : {})}
               >
-                <Text
-                  style={[
-                    styles.primaryCtaText,
-                    { color: colors.primaryBtnText },
-                  ]}
-                >
-                  Open Dashboard ({accounts.length})
-                </Text>
-                <ArrowRight size={18} color={colors.primaryBtnText} />
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                style={[
-                  styles.secondaryCtaBtn,
-                  {
-                    backgroundColor: colors.surfaceSecondary,
-                    borderColor: colors.borderLight,
-                  },
-                ]}
-                onPress={() => router.push('/dashboard')}
-                activeOpacity={0.7}
-                {...(Platform.OS === 'web' ? ({ className: 'glow-on-click' } as any) : {})}
-              >
-                <Text
-                  style={[
-                    styles.secondaryCtaText,
-                    { color: colors.textPrimary },
-                  ]}
-                >
-                  {t('getStarted')}
-                </Text>
-                <ArrowRight size={16} color={colors.textPrimary} />
-              </TouchableOpacity>
-            )}
+                {accounts.length > 0 ? `Open Dashboard (${accounts.length})` : t('getStarted')}
+              </Text>
+              <ArrowRight size={18} color={colors.primaryBtnText} />
+            </TouchableOpacity>
           </View>
 
           {/* 7. LEARN MORE ACCORDION */}
@@ -1029,28 +1004,31 @@ const styles = StyleSheet.create({
   },
   primaryCtaBtn: {
     flex: 1,
-    minWidth: 220,
+    minWidth: 210,
+    height: 44,
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 28,
-    borderRadius: Radius.full,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.45,
-    shadowRadius: 14,
-    elevation: 8,
+    paddingHorizontal: 22,
+    borderRadius: 22,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
     zIndex: 50,
   },
   primaryCtaText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
-    letterSpacing: 0.3,
+    letterSpacing: 0.25,
   },
   googleCtaBtn: {
     flex: 1,
-    minWidth: 220,
+    minWidth: 210,
+    height: 44,
+    minHeight: 44,
     zIndex: 50,
   },
   secondaryCtaBtn: {

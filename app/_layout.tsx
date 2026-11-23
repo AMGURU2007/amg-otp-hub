@@ -153,6 +153,8 @@ function MainAppShell() {
 
   // Device-Wide Anti-Screenshot, Anti-Lens & Focus-Loss Protection
   React.useEffect(() => {
+    const mountTimestamp = Date.now();
+
     // 1. Android FLAG_SECURE & iOS screen capture prevention
     if (Platform.OS !== 'web') {
       (async () => {
@@ -167,8 +169,11 @@ function MainAppShell() {
 
     // 2. Instant AppState listener (blocks Google Lens, Assistant context, Circle to Search & multi-window overlays)
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (Date.now() - mountTimestamp < 1500) return; // Prevent false trigger on initial mount/reload
       if (nextAppState === 'inactive' || nextAppState === 'background') {
         setIsPrivacyVeiled(true);
+      } else if (nextAppState === 'active') {
+        setIsPrivacyVeiled(false);
       }
     };
     const appStateSub = AppState.addEventListener('change', handleAppStateChange);
@@ -202,13 +207,25 @@ function MainAppShell() {
       };
 
       const handleVisibilityChange = () => {
+        if (Date.now() - mountTimestamp < 1500) return; // Skip cold reload blur
         if (document.visibilityState === 'hidden') {
           setIsPrivacyVeiled(true);
+        } else if (document.visibilityState === 'visible') {
+          setIsPrivacyVeiled(false);
         }
       };
 
       const handleWindowBlur = () => {
+        if (Date.now() - mountTimestamp < 1500) return; // Skip cold reload blur
         setIsPrivacyVeiled(true);
+      };
+
+      const handleWindowFocus = () => {
+        setIsPrivacyVeiled(false); // Auto-dismiss on focus restore
+      };
+
+      const handleGlobalClick = () => {
+        setIsPrivacyVeiled(false); // Auto-dismiss when user clicks
       };
 
       window.addEventListener('keydown', handleKeyDown, true);
@@ -219,12 +236,16 @@ function MainAppShell() {
       }, true);
       document.addEventListener('visibilitychange', handleVisibilityChange);
       window.addEventListener('blur', handleWindowBlur);
+      window.addEventListener('focus', handleWindowFocus);
+      window.addEventListener('click', handleGlobalClick);
 
       return () => {
         appStateSub.remove();
         window.removeEventListener('keydown', handleKeyDown, true);
         document.removeEventListener('visibilitychange', handleVisibilityChange);
         window.removeEventListener('blur', handleWindowBlur);
+        window.removeEventListener('focus', handleWindowFocus);
+        window.removeEventListener('click', handleGlobalClick);
         clearTimeout(veilTimeout);
       };
     }
