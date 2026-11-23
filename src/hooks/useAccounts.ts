@@ -12,9 +12,14 @@ export function useAccounts() {
   const refreshAccounts = useCallback(async () => {
     try {
       const list = await db.getAccounts();
-      setAccounts(list);
-      if (list.length > 0 && !selectedAccountId) {
-        setSelectedAccountId(list[0].id);
+      const allEmails = await db.getEmails();
+      const accurateList = list.map(acc => {
+        const unread = allEmails.filter(e => e.accountId === acc.id && !e.isRead).length;
+        return { ...acc, unreadCount: unread };
+      });
+      setAccounts(accurateList);
+      if (accurateList.length > 0 && !selectedAccountId) {
+        setSelectedAccountId(accurateList[0].id);
       }
     } catch (err) {
       console.warn('[useAccounts] refresh warning:', err);

@@ -71,7 +71,7 @@ export const translations = {
     multiAccountHub: 'Account Manager',
     multiAccountDesc: 'Connect and manage your personal Gmail accounts securely with zero cloud servers.',
     connectGmailBtn: 'Connect Gmail',
-    whatToNameAccount: 'What would you like to name this account?',
+    whatToNameAccount: 'Custom Account Name',
     gmailAddress: 'Gmail Address',
     passwordLabel: 'Password',
     connectAccountBtn: 'Connect Account',

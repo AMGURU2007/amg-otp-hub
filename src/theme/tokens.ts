@@ -8,7 +8,7 @@ export const Breakpoints = {
   bottomBarHeight: 64,
 } as const;
 
-export type AppThemeMode = 'midnight' | 'aurora' | 'milky' | 'pearl' | 'dark' | 'light';
+export type AppThemeMode = 'google-white' | 'midnight' | 'aurora' | 'milky' | 'pearl' | 'dark' | 'light';
 
 export interface ThemeColors {
   id: string;
@@ -275,16 +275,71 @@ const pearlTheme: ThemeColors = {
   laurel: '#2563eb',
 };
 
+const googleWhiteTheme: ThemeColors = {
+  id: 'google-white',
+  name: 'Google Clean White',
+  isDark: false,
+  dotColor: '#1a73e8',
+  background: '#ffffff',
+  backgroundGlow: '#f8f9fa',
+  backgroundGradient: 'radial-gradient(ellipse at 50% 20%, #ffffff 0%, #f8f9fa 90%)',
+  cyanWaveAccent: '#1a73e8',
+  surface: '#f8f9fa',
+  surfaceSecondary: '#ffffff',
+  surfaceHover: '#f1f3f4',
+  surfaceActive: '#e8f0fe',
+  border: '#dadce0',
+  borderLight: '#e8eaed',
+  borderFocus: '#1a73e8',
+  glow: 'rgba(26, 115, 232, 0.22)',
+  textPrimary: '#202124',
+  textSecondary: '#5f6368',
+  textMuted: '#80868b',
+  textInverse: '#ffffff',
+  primary: '#1a73e8',
+  primaryHover: '#1557b0',
+  primaryLight: 'rgba(26, 115, 232, 0.08)',
+  primaryBorder: '#dadce0',
+  accentGradient: 'linear-gradient(90deg, #1a73e8, #4285f4)',
+  primaryBtnBg: '#1a73e8',
+  primaryBtnText: '#ffffff',
+  primaryBtnShadow: 'rgba(26, 115, 232, 0.28)',
+  secondaryBtnBg: '#ffffff',
+  secondaryBtnBorder: '#dadce0',
+  secondaryBtnText: '#202124',
+  emerald: '#1e8e3e',
+  emeraldLight: 'rgba(30, 142, 62, 0.08)',
+  emeraldBorder: '#ceead6',
+  amber: '#f29900',
+  amberLight: 'rgba(242, 153, 0, 0.08)',
+  amberBorder: '#feefc3',
+  rose: '#d93025',
+  roseLight: 'rgba(217, 48, 37, 0.08)',
+  roseBorder: '#fad2cf',
+  purple: '#a142f4',
+  purpleLight: 'rgba(161, 66, 244, 0.08)',
+  purpleBorder: '#f3e8fd',
+  cyan: '#12b5cb',
+  cyanLight: 'rgba(18, 181, 203, 0.08)',
+  cyanBorder: '#cbf0f8',
+  codeBg: '#f8f9fa',
+  codeBorder: '#dadce0',
+  codeText: '#1a73e8',
+  laurel: '#1a73e8',
+};
+
 export const Colors = {
+  'google-white': googleWhiteTheme,
   midnight: midnightTheme,
   aurora: auroraTheme,
   milky: milkyTheme,
   pearl: pearlTheme,
   dark: midnightTheme,
-  light: milkyTheme,
+  light: googleWhiteTheme,
 };
 
 export const THEME_PALETTES = [
+  { id: 'google-white', name: 'Google Clean White', isDark: false, dot: '#1a73e8' },
   { id: 'midnight', name: 'Midnight Neon Cyan', isDark: true, dot: '#00f2fe' },
   { id: 'aurora', name: 'Aurora Emerald & Violet', isDark: true, dot: '#10f5b8' },
   { id: 'milky', name: 'Milky Ivory & Royal Gold', isDark: false, dot: '#e6b63b' },

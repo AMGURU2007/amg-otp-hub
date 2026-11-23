@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   Modal,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { Slot, useRouter, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -144,6 +145,87 @@ function MainAppShell() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState<boolean>(false);
   const [activeSession, setActiveSession] = useState<UserSession | null>(null);
+  const [isPrivacyVeiled, setIsPrivacyVeiled] = useState(false);
+
+  // Device-Wide Anti-Screenshot & Screen Capture Protection
+  React.useEffect(() => {
+    if (Platform.OS !== 'web') {
+      (async () => {
+        try {
+          const ScreenCapture = await import('expo-screen-capture');
+          if (ScreenCapture?.preventScreenCaptureAsync) {
+            await ScreenCapture.preventScreenCaptureAsync();
+          }
+        } catch {}
+      })();
+    } else if (typeof window !== 'undefined') {
+      let veilTimeout: any = null;
+
+      const triggerVeil = (reason = 'Screenshots are disabled for OTP security.') => {
+        setIsPrivacyVeiled(true);
+        showToast(reason);
+        clearTimeout(veilTimeout);
+        veilTimeout = setTimeout(() => {
+          setIsPrivacyVeiled(false);
+        }, 1500);
+      };
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'PrintScreen' || e.keyCode === 44) {
+          e.preventDefault();
+          triggerVeil('Screenshots are disabled for OTP security.');
+        }
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'S' || e.key === 's')) {
+          e.preventDefault();
+          triggerVeil('Screen snip is blocked for OTP privacy.');
+        }
+        if (e.metaKey && e.shiftKey && ['3', '4', '5'].includes(e.key)) {
+          e.preventDefault();
+          triggerVeil('Screenshots are disabled for OTP security.');
+        }
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
+          e.preventDefault();
+          triggerVeil('Printing is disabled for OTP security.');
+        }
+      };
+
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'hidden') {
+          setIsPrivacyVeiled(true);
+        } else {
+          clearTimeout(veilTimeout);
+          veilTimeout = setTimeout(() => setIsPrivacyVeiled(false), 300);
+        }
+      };
+
+      const handleWindowBlur = () => {
+        setIsPrivacyVeiled(true);
+      };
+
+      const handleWindowFocus = () => {
+        clearTimeout(veilTimeout);
+        veilTimeout = setTimeout(() => setIsPrivacyVeiled(false), 200);
+      };
+
+      window.addEventListener('keydown', handleKeyDown, true);
+      window.addEventListener('keyup', (e: KeyboardEvent) => {
+        if (e.key === 'PrintScreen' || e.keyCode === 44) {
+          triggerVeil('Screenshots are disabled for OTP security.');
+        }
+      }, true);
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      window.addEventListener('blur', handleWindowBlur);
+      window.addEventListener('focus', handleWindowFocus);
+
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown, true);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        window.removeEventListener('blur', handleWindowBlur);
+        window.removeEventListener('focus', handleWindowFocus);
+        clearTimeout(veilTimeout);
+      };
+    }
+  }, []);
 
   React.useEffect(() => {
     handleBootAuth();
@@ -435,6 +517,17 @@ function MainAppShell() {
           </Modal>
         )}
 
+        {/* Anti-Screen Capture Privacy Veil */}
+        {isPrivacyVeiled && (
+          <View style={styles.privacyVeilOverlay} pointerEvents="none">
+            <View style={styles.privacyVeilContent}>
+              <ShieldAlert size={36} color="#1a73e8" />
+              <Text style={styles.privacyVeilTitle}>Anti-Screen Capture Shield Active</Text>
+              <Text style={styles.privacyVeilSub}>Sensitive OTP verification codes are hidden for privacy</Text>
+            </View>
+          </View>
+        )}
+
         <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />
       </SafeAreaView>
     </AppContext.Provider>
@@ -565,5 +658,47 @@ const styles = StyleSheet.create({
     color: '#07101d',
     fontWeight: Typography.fontWeights.bold,
     fontSize: Typography.fontSizes.sm,
+  },
+  privacyVeilOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 999999,
+    backgroundColor: 'rgba(255, 255, 255, 0.94)',
+    ...(Platform.OS === 'web'
+      ? ({ backdropFilter: 'blur(25px)', WebkitBackdropFilter: 'blur(25px)' } as any)
+      : {}),
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: Spacing.xl,
+  },
+  privacyVeilContent: {
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: Radius.card,
+    padding: Spacing.xl,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
+    maxWidth: 420,
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#dadce0',
+  },
+  privacyVeilTitle: {
+    fontSize: Typography.fontSizes.md,
+    fontWeight: Typography.fontWeights.bold,
+    color: '#202124',
+    marginTop: Spacing.md,
+    textAlign: 'center',
+  },
+  privacyVeilSub: {
+    fontSize: Typography.fontSizes.xs,
+    color: '#5f6368',
+    marginTop: 4,
+    textAlign: 'center',
   },
 });

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Animated, Platform } from 're
 import { OtpEntry } from '../types';
 import { Radius, Spacing, Typography } from '../theme/tokens';
 import { useTheme } from '../theme/ThemeContext';
-import { Copy, Check, ExternalLink, ShieldCheck, Clock, CheckCheck, Sparkles } from 'lucide-react-native';
+import { Copy, Check, ExternalLink, ShieldCheck, Clock, CheckCheck, Sparkles, AlertCircle } from 'lucide-react-native';
 
 interface OtpCardProps {
   otp: OtpEntry;
@@ -134,14 +134,27 @@ export const OtpCard: React.FC<OtpCardProps> = ({
         </View>
 
         <View style={styles.headerMeta}>
-          <View
-            style={[
-              styles.badge,
-              { backgroundColor: confStyle.bg, borderColor: confStyle.border },
-            ]}
-          >
-            <ShieldCheck size={11} color={confStyle.text} />
-            <Text style={[styles.badgeText, { color: confStyle.text }]}>{confStyle.label}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            {otp.isSpam && (
+              <View
+                style={[
+                  styles.spamBadge,
+                  { backgroundColor: colors.amberLight, borderColor: colors.amberBorder },
+                ]}
+              >
+                <AlertCircle size={10} color={colors.amber} />
+                <Text style={[styles.spamBadgeText, { color: colors.amber }]}>Found in Spam</Text>
+              </View>
+            )}
+            <View
+              style={[
+                styles.badge,
+                { backgroundColor: confStyle.bg, borderColor: confStyle.border },
+              ]}
+            >
+              <ShieldCheck size={11} color={confStyle.text} />
+              <Text style={[styles.badgeText, { color: confStyle.text }]}>{confStyle.label}</Text>
+            </View>
           </View>
           <View style={styles.timeRow}>
             <Clock size={11} color={colors.textMuted} />
@@ -394,10 +407,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   codeText: {
-    fontFamily: 'monospace',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    fontVariant: ['tabular-nums'],
     fontSize: Typography.fontSizes.xxl,
     fontWeight: Typography.fontWeights.extrabold,
     letterSpacing: 4,
+  },
+  spamBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    borderWidth: 1,
+    borderRadius: Radius.full,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  spamBadgeText: {
+    fontSize: 9,
+    fontWeight: Typography.fontWeights.bold,
+    letterSpacing: 0.2,
   },
   copyButtonWrapper: {
     position: 'relative',

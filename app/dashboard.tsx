@@ -13,6 +13,7 @@ import { LiveEmailInjectorModal } from '../src/components/LiveEmailInjectorModal
 import { useApp } from './_layout';
 import { useOtpFeed } from '../src/hooks/useOtpFeed';
 import { db } from '../src/storage/database';
+import { oauthService } from '../src/services/oauthService';
 import { EmailMessage, OtpEntry } from '../src/types';
 import {
   Users,
@@ -43,11 +44,31 @@ export default function DashboardScreen() {
   } = useApp();
   const { otps, copiedOtpId, handleCopyOtp, markUsed, refreshOtps } = useOtpFeed();
 
+  const [otpWindow, setOtpWindow] = useState<'1h' | '3h'>('1h');
   const [inspectModalVisible, setInspectModalVisible] = useState(false);
   const [inspectedEmail, setInspectedEmail] = useState<EmailMessage | null>(null);
   const [inspectedOtp, setInspectedOtp] = useState<OtpEntry | null>(null);
   const [injectorVisible, setInjectorVisible] = useState(false);
   const [emails, setEmails] = useState<EmailMessage[]>([]);
+
+  const handleGoogleSignIn = async () => {
+    showToast('Connecting via Google OAuth 2.0...');
+    try {
+      const res = await oauthService.signInWithGoogle('Primary');
+      if (res.success && res.account) {
+        await refreshAccounts();
+        showToast(`Connected ${res.account.label}!`);
+      } else if (res.success) {
+        showToast('Redirecting to Google secure authentication...');
+      } else {
+        showToast(`OAuth notice: ${res.error || 'Connection failed'}`);
+        router.push('/accounts');
+      }
+    } catch (err: any) {
+      showToast(`Sign in error: ${err.message}`);
+      router.push('/accounts');
+    }
+  };
 
   const loadEmails = async () => {
     try {
@@ -111,9 +132,10 @@ export default function DashboardScreen() {
   };
 
   const uniqueServices = Array.from(new Set(otps.map(o => o.serviceName)));
-  const todayOtps = otps.filter(o => {
+  const windowMs = otpWindow === '1h' ? 60 * 60 * 1000 : 3 * 60 * 60 * 1000;
+  const activeWindowOtps = otps.filter(o => {
     const diff = Date.now() - new Date(o.detectedAt).getTime();
-    return diff <= 24 * 3600 * 1000;
+    return diff <= windowMs;
   });
 
   return (
@@ -170,12 +192,16 @@ export default function DashboardScreen() {
             onPress={() => router.push('/accounts')}
           />
           <CometDial
-            label={t('activeOtps')}
+            label="Active OTP Codes"
             min={0}
-            max={50}
-            value={otps.length}
-            subtitle={otps.length > 0 ? `${todayOtps.length} received today` : 'Waiting for incoming codes'}
-            unit="CODES"
+            max={25}
+            value={activeWindowOtps.length}
+            subtitle={
+              activeWindowOtps.length > 0
+                ? `${activeWindowOtps.length} in last ${otpWindow === '1h' ? '1 hour' : '3 hours'}`
+                : `No codes in last ${otpWindow === '1h' ? '1 hour' : '3 hours'}`
+            }
+            unit="ACTIVE"
             color={colors.emerald || '#10b981'}
             icon={<ShieldAlert size={16} color={colors.emerald || '#10b981'} />}
             onPress={() => router.push('/otp')}
@@ -204,13 +230,25 @@ export default function DashboardScreen() {
                 {t('accountsSubtitle')}
               </Text>
             </View>
-            <TouchableOpacity
-              style={styles.seeAllBtn}
-              onPress={() => router.push('/accounts')}
-            >
-              <Text style={[styles.seeAllText, { color: colors.primary }]}>{t('manageAccountsBtn')}</Text>
-              <ArrowRight size={14} color={colors.primary} />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <TouchableOpacity
+                style={[styles.addAccountHeaderBtn, { backgroundColor: colors.primary, zIndex: 30 }]}
+                onPress={handleGoogleSignIn}
+                activeOpacity={0.7}
+                {...(Platform.OS === 'web' ? ({ className: 'glow-on-click' } as any) : {})}
+              >
+                <Plus size={14} color="#ffffff" />
+                <Text style={styles.addAccountHeaderBtnText}>Add Gmail</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.seeAllBtn}
+                onPress={() => router.push('/accounts')}
+              >
+                <Text style={[styles.seeAllText, { color: colors.primary }]}>{t('manageAccountsBtn')}</Text>
+                <ArrowRight size={14} color={colors.primary} />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {accounts.length === 0 ? (
@@ -239,14 +277,14 @@ export default function DashboardScreen() {
               </Text>
               <View style={styles.emptyStateBtnRow}>
                 <TouchableOpacity
-                  style={[styles.primaryActionBtn, { backgroundColor: colors.primaryBtnBg }]}
-                  onPress={() => router.push('/accounts')}
+                  style={[styles.primaryActionBtn, { backgroundColor: colors.primaryBtnBg, zIndex: 30 }]}
+                  onPress={handleGoogleSignIn}
                   activeOpacity={0.7}
                   {...(Platform.OS === 'web' ? ({ className: 'glow-on-click' } as any) : {})}
                 >
                   <Plus size={16} color={colors.primaryBtnText} />
                   <Text style={[styles.primaryActionBtnText, { color: colors.primaryBtnText }]}>
-                    {t('connectGmailBtn')}
+                    Sign in with Google
                   </Text>
                 </TouchableOpacity>
 
@@ -299,13 +337,69 @@ export default function DashboardScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View>
-              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-                {t('navOtps')}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+                  {t('navOtps')}
+                </Text>
+
+                {/* 1h / 3h Time Window Toggle Pill */}
+                <View
+                  style={[
+                    styles.windowPillContainer,
+                    { backgroundColor: colors.surfaceSecondary, borderColor: colors.borderLight },
+                  ]}
+                >
+                  <TouchableOpacity
+                    style={[
+                      styles.windowPill,
+                      otpWindow === '1h' && [
+                        styles.windowPillActive,
+                        { backgroundColor: colors.primaryLight, borderColor: colors.primary },
+                      ],
+                    ]}
+                    onPress={() => setOtpWindow('1h')}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        styles.windowPillText,
+                        { color: otpWindow === '1h' ? colors.primary : colors.textMuted },
+                        otpWindow === '1h' && { fontWeight: '700' },
+                      ]}
+                    >
+                      Last 1 Hour
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.windowPill,
+                      otpWindow === '3h' && [
+                        styles.windowPillActive,
+                        { backgroundColor: colors.primaryLight, borderColor: colors.primary },
+                      ],
+                    ]}
+                    onPress={() => setOtpWindow('3h')}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        styles.windowPillText,
+                        { color: otpWindow === '3h' ? colors.primary : colors.textMuted },
+                        otpWindow === '3h' && { fontWeight: '700' },
+                      ]}
+                    >
+                      Last 3 Hours
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
               <Text style={[styles.sectionSubtitle, { color: colors.textMuted }]}>
-                {t('otpsSubtitle')}
+                {activeWindowOtps.length} active OTPs received in the last {otpWindow === '1h' ? '1 hour' : '3 hours'}
               </Text>
             </View>
+
             <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
               <TouchableOpacity
                 style={[
@@ -336,7 +430,7 @@ export default function DashboardScreen() {
             </View>
           </View>
 
-          {otps.length === 0 ? (
+          {activeWindowOtps.length === 0 ? (
             <View
               style={[
                 styles.emptyStateBox,
@@ -355,24 +449,40 @@ export default function DashboardScreen() {
                 <ShieldAlert size={28} color={colors.emerald} />
               </View>
               <Text style={[styles.emptyStateTitle, { color: colors.textPrimary }]}>
-                {t('emptyOtpFeedTitle')}
+                No Active OTPs in Last {otpWindow === '1h' ? '1 Hour' : '3 Hours'}
               </Text>
               <Text style={[styles.emptyStateDesc, { color: colors.textMuted }]}>
-                {t('emptyOtpFeedDesc')}
+                New incoming verification codes will appear here in real time. All {otps.length} historical codes remain safe in your OTP vault.
               </Text>
-              <TouchableOpacity
-                style={[styles.primaryActionBtn, { backgroundColor: colors.primaryBtnBg }]}
-                onPress={() => setInjectorVisible(true)}
-              >
-                <Sparkles size={16} color={colors.primaryBtnText} />
-                <Text style={[styles.primaryActionBtnText, { color: colors.primaryBtnText }]}>
-                  {t('simulateIncomingOtp')}
-                </Text>
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
+                <TouchableOpacity
+                  style={[styles.primaryActionBtn, { backgroundColor: colors.primaryBtnBg }]}
+                  onPress={() => setInjectorVisible(true)}
+                >
+                  <Sparkles size={16} color={colors.primaryBtnText} />
+                  <Text style={[styles.primaryActionBtnText, { color: colors.primaryBtnText }]}>
+                    {t('simulateIncomingOtp')}
+                  </Text>
+                </TouchableOpacity>
+
+                {otps.length > 0 && (
+                  <TouchableOpacity
+                    style={[
+                      styles.secondaryActionBtn,
+                      { backgroundColor: colors.surfaceSecondary, borderColor: colors.borderLight },
+                    ]}
+                    onPress={() => router.push('/otp')}
+                  >
+                    <Text style={[styles.secondaryActionBtnText, { color: colors.textPrimary }]}>
+                      View Vault ({otps.length})
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           ) : (
             <View style={styles.otpList}>
-              {otps.slice(0, 4).map(otp => (
+              {activeWindowOtps.slice(0, 6).map(otp => (
                 <OtpCard
                   key={otp.id}
                   otp={otp}
@@ -450,6 +560,42 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: Spacing.md,
     marginBottom: Spacing.xl,
+    zIndex: 5,
+  },
+  addAccountHeaderBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: Radius.full,
+  },
+  addAccountHeaderBtnText: {
+    color: '#ffffff',
+    fontSize: Typography.fontSizes.xs,
+    fontWeight: Typography.fontWeights.bold,
+  },
+  windowPillContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: Radius.full,
+    borderWidth: 1,
+    padding: 2,
+    marginLeft: 8,
+  },
+  windowPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: Radius.full,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  windowPillActive: {
+    borderWidth: 1,
+  },
+  windowPillText: {
+    fontSize: Typography.fontSizes.xs - 1,
+    fontWeight: Typography.fontWeights.medium,
   },
   section: {
     marginBottom: Spacing.xxl,

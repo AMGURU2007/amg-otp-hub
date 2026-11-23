@@ -36,8 +36,6 @@ import {
   KeyRound,
 } from 'lucide-react-native';
 
-const QUICK_LABEL_CHIPS = ['College', 'Programming', 'Office', 'Personal', 'Freelance', 'Trading'];
-
 export default function AccountsScreen() {
   const { colors, isDark } = useTheme();
   const { t } = useLanguage();
@@ -58,7 +56,7 @@ export default function AccountsScreen() {
   const [injectorVisible, setInjectorVisible] = useState(false);
 
   // Form states
-  const [newLabel, setNewLabel] = useState('College');
+  const [newLabel, setNewLabel] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -67,7 +65,7 @@ export default function AccountsScreen() {
   const [editLabel, setEditLabel] = useState('');
 
   const handleOpenAdd = () => {
-    setNewLabel('College');
+    setNewLabel('');
     setNewEmail('');
     setNewPassword('');
     setShowPassword(false);
@@ -79,16 +77,13 @@ export default function AccountsScreen() {
       showToast('Please enter a valid Gmail address');
       return;
     }
-    if (!newLabel.trim()) {
-      showToast('Please choose or enter an account name');
-      return;
-    }
+    const finalLabel = newLabel.trim() || newEmail.split('@')[0] || 'Personal';
 
     setIsSubmitting(true);
     try {
       const acc = await db.addLiveAccount({
         email: newEmail.trim().toLowerCase(),
-        label: newLabel.trim(),
+        label: finalLabel,
       });
 
       if (newPassword.trim()) {
@@ -101,7 +96,7 @@ export default function AccountsScreen() {
 
       await refreshAccounts();
       setAddModalVisible(false);
-      showToast(`Account "${newLabel.trim()}" secured & connected`);
+      showToast(`Account "${finalLabel}" secured & connected`);
     } catch (err: any) {
       showToast(`Error adding account: ${err.message}`);
     } finally {
@@ -470,36 +465,8 @@ export default function AccountsScreen() {
               {/* Option 2: 3 Simple Fields Only */}
               {/* Field 1: Name / Tag */}
               <Text style={[styles.formLabel, { color: colors.textSecondary }]}>
-                {t('whatToNameAccount')}
+                Custom Account Name
               </Text>
-
-              {/* Quick Tag Chips */}
-              <View style={styles.chipTagsRow}>
-                {QUICK_LABEL_CHIPS.map(chip => (
-                  <TouchableOpacity
-                    key={chip}
-                    style={[
-                      styles.chipTag,
-                      {
-                        backgroundColor:
-                          newLabel === chip ? colors.primaryLight : colors.surfaceSecondary,
-                        borderColor: newLabel === chip ? colors.primary : colors.borderLight,
-                      },
-                    ]}
-                    onPress={() => setNewLabel(chip)}
-                  >
-                    <Text
-                      style={[
-                        styles.chipTagText,
-                        { color: newLabel === chip ? colors.primary : colors.textSecondary },
-                        newLabel === chip && { fontWeight: '700' },
-                      ]}
-                    >
-                      {chip}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
 
               <TextInput
                 style={[
@@ -512,7 +479,7 @@ export default function AccountsScreen() {
                 ]}
                 value={newLabel}
                 onChangeText={setNewLabel}
-                placeholder="Custom Label (e.g. College, Office)"
+                placeholder="Enter custom name for this email (e.g., My Main, Father's Mail, Coding)..."
                 placeholderTextColor={colors.textMuted}
               />
 
@@ -644,7 +611,7 @@ export default function AccountsScreen() {
             </View>
 
             <View style={styles.modalBody}>
-              <Text style={[styles.formLabel, { color: colors.textSecondary }]}>Account Label</Text>
+              <Text style={[styles.formLabel, { color: colors.textSecondary }]}>Custom Account Name</Text>
               <TextInput
                 style={[
                   styles.formInput,
@@ -656,7 +623,7 @@ export default function AccountsScreen() {
                 ]}
                 value={editLabel}
                 onChangeText={setEditLabel}
-                placeholder="Account Label"
+                placeholder="Enter custom name for this email (e.g., My Main, Father's Mail, Coding)..."
                 placeholderTextColor={colors.textMuted}
               />
             </View>

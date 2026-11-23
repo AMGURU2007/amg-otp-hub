@@ -126,6 +126,20 @@ export default function Root({ children }: { children: React.ReactNode }) {
                 transform: translateY(0);
               }
             }
+
+            /* Anti-Screen Capture & Text Protection */
+            .otp-code-secure, [data-secure-otp="true"] {
+              user-select: none !important;
+              -webkit-user-select: none !important;
+              -ms-user-select: none !important;
+            }
+
+            @media print {
+              body, html {
+                display: none !important;
+                visibility: hidden !important;
+              }
+            }
           `
         }} />
       </head>

@@ -11,19 +11,19 @@ interface ThemeContextType {
   palettes: typeof THEME_PALETTES;
 }
 
-const THEME_STORAGE_KEY = 'amg_otp_hub_theme_mode_v3';
+const THEME_STORAGE_KEY = 'amg_otp_hub_theme_mode_v4';
 
 const ThemeContext = createContext<ThemeContextType>({
-  theme: 'midnight',
-  colors: Colors.midnight,
-  isDark: true,
+  theme: 'google-white',
+  colors: Colors['google-white'],
+  isDark: false,
   toggleTheme: () => {},
   setTheme: () => {},
   palettes: THEME_PALETTES,
 });
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [theme, setThemeState] = useState<AppThemeMode>('midnight');
+  const [theme, setThemeState] = useState<AppThemeMode>('google-white');
 
   useEffect(() => {
     if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
@@ -42,9 +42,9 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const toggleTheme = () => {
-    // If currently dark, switch to primary light ('milky'); if light, switch to primary dark ('midnight')
+    // If currently dark, switch to primary Google White; if light, switch to primary dark ('midnight')
     if (theme === 'midnight' || theme === 'aurora' || theme === 'dark') {
-      setTheme('milky');
+      setTheme('google-white');
     } else {
       setTheme('midnight');
     }
@@ -52,7 +52,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   // Resolve palette
   const resolvedKey =
-    theme === 'dark' ? 'midnight' : theme === 'light' ? 'milky' : theme;
+    theme === 'dark' ? 'midnight' : theme === 'light' ? 'google-white' : theme;
   const colors: ThemeColors = (Colors as any)[resolvedKey] || Colors.midnight;
   const isDark = colors.isDark;
 

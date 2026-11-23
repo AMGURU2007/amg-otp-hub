@@ -28,6 +28,7 @@ import {
   Plus,
   Send,
   Sparkles,
+  AlertCircle,
 } from 'lucide-react-native';
 
 export default function InboxScreen() {
@@ -55,6 +56,7 @@ export default function InboxScreen() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filterOtpsOnly, setFilterOtpsOnly] = useState<boolean>(false);
+  const [currentFolder, setCurrentFolder] = useState<'PRIMARY' | 'SPAM' | 'ALL'>('PRIMARY');
 
   // Inspector modal
   const [inspectModalVisible, setInspectModalVisible] = useState(false);
@@ -91,7 +93,18 @@ export default function InboxScreen() {
     await loadEmails();
   };
 
+  const spamCount = emails.filter(
+    e => e.folder === 'SPAM' || (e.labels || []).includes('SPAM')
+  ).length;
+  const primaryCount = emails.filter(
+    e => e.folder !== 'SPAM' && !(e.labels || []).includes('SPAM')
+  ).length;
+  const allCount = emails.length;
+
   const filteredEmails = emails.filter(e => {
+    const isMsgSpam = e.folder === 'SPAM' || (e.labels || []).includes('SPAM');
+    if (currentFolder === 'PRIMARY' && isMsgSpam) return false;
+    if (currentFolder === 'SPAM' && !isMsgSpam) return false;
     if (filterOtpsOnly && !e.hasOtp) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -317,6 +330,138 @@ export default function InboxScreen() {
                 </ScrollView>
               </View>
             )}
+
+            {/* Gmail-Replica Folder Navigation Tabs */}
+            <View
+              style={[
+                styles.gmailFolderTabBar,
+                { backgroundColor: colors.surface, borderBottomColor: colors.borderLight },
+              ]}
+            >
+              <TouchableOpacity
+                style={[
+                  styles.gmailFolderTab,
+                  currentFolder === 'PRIMARY' && [
+                    styles.gmailFolderTabActive,
+                    { borderBottomColor: colors.primary },
+                  ],
+                ]}
+                onPress={() => setCurrentFolder('PRIMARY')}
+                activeOpacity={0.7}
+              >
+                <InboxIcon
+                  size={16}
+                  color={currentFolder === 'PRIMARY' ? colors.primary : colors.textMuted}
+                />
+                <Text
+                  style={[
+                    styles.gmailFolderTabText,
+                    {
+                      color:
+                        currentFolder === 'PRIMARY' ? colors.primary : colors.textSecondary,
+                    },
+                    currentFolder === 'PRIMARY' && { fontWeight: '700' },
+                  ]}
+                >
+                  Primary
+                </Text>
+                <View
+                  style={[
+                    styles.folderBadge,
+                    { backgroundColor: colors.primaryLight },
+                  ]}
+                >
+                  <Text style={[styles.folderBadgeText, { color: colors.primary }]}>
+                    {primaryCount}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.gmailFolderTab,
+                  currentFolder === 'SPAM' && [
+                    styles.gmailFolderTabActive,
+                    { borderBottomColor: colors.amber },
+                  ],
+                ]}
+                onPress={() => setCurrentFolder('SPAM')}
+                activeOpacity={0.7}
+              >
+                <AlertCircle
+                  size={16}
+                  color={currentFolder === 'SPAM' ? colors.amber : colors.textMuted}
+                />
+                <Text
+                  style={[
+                    styles.gmailFolderTabText,
+                    {
+                      color: currentFolder === 'SPAM' ? colors.amber : colors.textSecondary,
+                    },
+                    currentFolder === 'SPAM' && { fontWeight: '700' },
+                  ]}
+                >
+                  Spam
+                </Text>
+                {spamCount > 0 && (
+                  <View
+                    style={[
+                      styles.folderBadge,
+                      { backgroundColor: colors.amberLight },
+                    ]}
+                  >
+                    <Text style={[styles.folderBadgeText, { color: colors.amber }]}>
+                      {spamCount}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.gmailFolderTab,
+                  currentFolder === 'ALL' && [
+                    styles.gmailFolderTabActive,
+                    { borderBottomColor: colors.purple || '#a855f7' },
+                  ],
+                ]}
+                onPress={() => setCurrentFolder('ALL')}
+                activeOpacity={0.7}
+              >
+                <Mail
+                  size={16}
+                  color={
+                    currentFolder === 'ALL'
+                      ? colors.purple || '#a855f7'
+                      : colors.textMuted
+                  }
+                />
+                <Text
+                  style={[
+                    styles.gmailFolderTabText,
+                    {
+                      color:
+                        currentFolder === 'ALL'
+                          ? colors.purple || '#a855f7'
+                          : colors.textSecondary,
+                    },
+                    currentFolder === 'ALL' && { fontWeight: '700' },
+                  ]}
+                >
+                  All Mail
+                </Text>
+                <View
+                  style={[
+                    styles.folderBadge,
+                    { backgroundColor: colors.surfaceSecondary },
+                  ]}
+                >
+                  <Text style={[styles.folderBadgeText, { color: colors.textMuted }]}>
+                    {allCount}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
 
             {/* Sub-toolbar: Search & OTPs Only Filter */}
             <View
@@ -588,6 +733,36 @@ const styles = StyleSheet.create({
   mobileChipText: {
     fontSize: Typography.fontSizes.xs,
     fontWeight: Typography.fontWeights.medium,
+  },
+  gmailFolderTabBar: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    paddingHorizontal: Spacing.sm,
+  },
+  gmailFolderTab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 2.5,
+    borderBottomColor: 'transparent',
+  },
+  gmailFolderTabActive: {
+    // borderBottomColor set dynamically
+  },
+  gmailFolderTabText: {
+    fontSize: Typography.fontSizes.xs + 1,
+    fontWeight: Typography.fontWeights.medium,
+  },
+  folderBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: Radius.full,
+  },
+  folderBadgeText: {
+    fontSize: 10,
+    fontWeight: Typography.fontWeights.bold,
   },
   filterToolbar: {
     flexDirection: 'row',

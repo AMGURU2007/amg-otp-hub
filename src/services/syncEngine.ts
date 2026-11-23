@@ -158,6 +158,7 @@ export const syncEngine = {
         const parsed = otpParser.parse(msg.subject, msg.bodyPlain, msg.sender, msg.senderName);
         if (parsed) {
           otpFoundCount++;
+          const isSpam = msg.folder === 'SPAM' || (msg.labels || []).includes('SPAM');
           const otpEntry: OtpEntry = {
             id: `otp_${msg.id}_${Date.now().toString(36)}`,
             emailId: msg.id,
@@ -174,6 +175,7 @@ export const syncEngine = {
             fullSubject: msg.subject,
             sender: msg.sender,
             isUsed: false,
+            isSpam,
           };
 
           await db.addOtp(otpEntry);

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { EmailMessage } from '../types';
 import { Radius, Spacing, Typography } from '../theme/tokens';
 import { useTheme } from '../theme/ThemeContext';
-import { KeyRound, Mail, MailOpen } from 'lucide-react-native';
+import { KeyRound, Mail, MailOpen, AlertTriangle } from 'lucide-react-native';
 
 interface EmailRowProps {
   email: EmailMessage;
@@ -14,6 +14,8 @@ interface EmailRowProps {
 export const EmailRow: React.FC<EmailRowProps> = ({ email, isSelected, onPress }) => {
   const { colors } = useTheme();
 
+  const isSpam = email.folder === 'SPAM' || (email.labels || []).includes('SPAM');
+
   const formatTime = (ts: number): string => {
     const date = new Date(ts);
     const now = new Date();
@@ -23,6 +25,11 @@ export const EmailRow: React.FC<EmailRowProps> = ({ email, isSelected, onPress }
     }
     return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
   };
+
+  const senderInitial = (email.senderName || email.sender || 'G')[0].toUpperCase();
+  const avatarColors = ['#1a73e8', '#1e8e3e', '#d93025', '#f29900', '#a142f4', '#12b5cb'];
+  const avatarBg =
+    avatarColors[Math.abs(senderInitial.charCodeAt(0)) % avatarColors.length];
 
   return (
     <TouchableOpacity
@@ -38,12 +45,9 @@ export const EmailRow: React.FC<EmailRowProps> = ({ email, isSelected, onPress }
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <View style={styles.iconCol}>
-        {email.isRead ? (
-          <MailOpen size={16} color={colors.textMuted} />
-        ) : (
-          <Mail size={16} color={colors.primary} />
-        )}
+      {/* Gmail Sender Initial Avatar Circle */}
+      <View style={[styles.avatarCircle, { backgroundColor: avatarBg }]}>
+        <Text style={styles.avatarInitial}>{senderInitial}</Text>
       </View>
 
       <View style={styles.contentCol}>
@@ -60,6 +64,21 @@ export const EmailRow: React.FC<EmailRowProps> = ({ email, isSelected, onPress }
           </Text>
 
           <View style={styles.timeGroup}>
+            {isSpam && (
+              <View
+                style={[
+                  styles.spamIndicator,
+                  {
+                    backgroundColor: colors.amberLight,
+                    borderColor: colors.amberBorder,
+                  },
+                ]}
+              >
+                <AlertTriangle size={10} color={colors.amber} />
+                <Text style={[styles.spamIndicatorText, { color: colors.amber }]}>Spam</Text>
+              </View>
+            )}
+
             {email.hasOtp && (
               <View
                 style={[
@@ -74,6 +93,7 @@ export const EmailRow: React.FC<EmailRowProps> = ({ email, isSelected, onPress }
                 <Text style={[styles.otpIndicatorText, { color: colors.emerald }]}>OTP</Text>
               </View>
             )}
+
             <Text style={[styles.timeText, { color: colors.textMuted }]}>
               {formatTime(email.internalDate)}
             </Text>
@@ -105,10 +125,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.base,
     paddingVertical: Spacing.md,
     borderBottomWidth: 1,
+    alignItems: 'flex-start',
+    gap: Spacing.md,
   },
-  iconCol: {
-    marginRight: Spacing.md,
-    paddingTop: 2,
+  avatarCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: Radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  avatarInitial: {
+    color: '#ffffff',
+    fontSize: Typography.fontSizes.sm,
+    fontWeight: Typography.fontWeights.bold,
   },
   contentCol: {
     flex: 1,
@@ -135,6 +166,21 @@ const styles = StyleSheet.create({
   },
   timeText: {
     fontSize: Typography.fontSizes.xs - 1,
+    fontVariant: ['tabular-nums'],
+  },
+  spamIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    borderWidth: 1,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: Radius.full,
+  },
+  spamIndicatorText: {
+    fontSize: 9,
+    fontWeight: Typography.fontWeights.extrabold,
+    letterSpacing: 0.5,
   },
   otpIndicator: {
     flexDirection: 'row',

@@ -18,6 +18,8 @@ export interface Account {
 export type OtpCodeType = 'NUMERIC' | 'ALPHANUMERIC' | 'MAGIC_LINK';
 export type OtpConfidence = 'HIGH' | 'MEDIUM' | 'LOW';
 
+export type EmailFolder = 'PRIMARY' | 'SPAM' | 'UPDATES';
+
 export interface OtpEntry {
   id: string;
   emailId: string;
@@ -34,6 +36,7 @@ export interface OtpEntry {
   fullSubject: string;
   sender: string;
   isUsed?: boolean;
+  isSpam?: boolean;
 }
 
 export interface EmailMessage {
@@ -52,6 +55,7 @@ export interface EmailMessage {
   otpId?: string;
   isRead: boolean;
   labels: string[];
+  folder?: EmailFolder;
 }
 
 export interface SyncState {

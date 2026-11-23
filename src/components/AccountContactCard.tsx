@@ -98,7 +98,7 @@ export const AccountContactCard: React.FC<AccountContactCardProps> = ({
         </View>
 
         <Text style={[styles.email, { color: colors.textMuted }]} numberOfLines={1}>
-          {account.email}
+          {account.email} {typeof account.unreadCount === 'number' ? `· ${account.unreadCount} unread` : ''}
         </Text>
       </View>
 

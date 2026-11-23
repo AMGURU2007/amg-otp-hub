@@ -1,4 +1,4 @@
-import { EmailMessage } from '../types';
+import { EmailMessage, EmailFolder } from '../types';
 
 export const GMAIL_API_BASE = 'https://gmail.googleapis.com/gmail/v1/users/me';
 
@@ -48,8 +48,10 @@ export const gmailService = {
     options: { maxResults?: number; q?: string; pageToken?: string } = {}
   ): Promise<GmailListMessagesResponse> {
     const params = new URLSearchParams();
-    params.set('maxResults', String(options.maxResults || 20));
-    if (options.q) params.set('q', options.q);
+    params.set('maxResults', String(options.maxResults || 25));
+    params.set('includeSpamTrash', 'true');
+    const query = options.q ? `(${options.q}) -in:trash` : '(in:inbox OR in:spam) -in:trash';
+    params.set('q', query);
     if (options.pageToken) params.set('pageToken', options.pageToken);
 
     const url = `${GMAIL_API_BASE}/messages?${params.toString()}`;
@@ -192,6 +194,13 @@ export const gmailService = {
     }
 
     const { plain, html } = this.extractMessageBody(raw.payload);
+    const labelIds: string[] = raw.labelIds || [];
+    let folder: EmailFolder = 'PRIMARY';
+    if (labelIds.includes('SPAM')) {
+      folder = 'SPAM';
+    } else if (labelIds.includes('CATEGORY_UPDATES') || labelIds.includes('CATEGORY_PROMOTIONS')) {
+      folder = 'UPDATES';
+    }
 
     return {
       id: raw.id,
@@ -206,8 +215,9 @@ export const gmailService = {
       bodyHtml: html,
       internalDate: parseInt(raw.internalDate || String(Date.now()), 10),
       hasOtp: false,
-      isRead: !(raw.labelIds || []).includes('UNREAD'),
-      labels: raw.labelIds || [],
+      isRead: !labelIds.includes('UNREAD'),
+      labels: labelIds,
+      folder,
     };
   },
 };

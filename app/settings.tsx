@@ -211,7 +211,9 @@ export default function SettingsScreen() {
                       { color: p.isDark ? '#94a3b8' : '#64748b' },
                     ]}
                   >
-                    {p.id === 'midnight'
+                    {p.id === 'google-white'
+                      ? 'Crisp Pure White + Google Blue'
+                      : p.id === 'midnight'
                       ? 'Deep Obsidian + Neon Cyan'
                       : p.id === 'aurora'
                       ? 'Obsidian + Emerald Violet'

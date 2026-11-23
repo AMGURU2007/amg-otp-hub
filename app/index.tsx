@@ -151,6 +151,7 @@ export default function WelcomeScreen() {
   };
 
   const handleCrossFadeStart = () => {
+    setBootStage('STAGE_2_ACTIVE');
     startStage2RollIn();
   };
 
@@ -378,7 +379,7 @@ export default function WelcomeScreen() {
             opacity: welcomeFadeAnim,
           },
         ]}
-        pointerEvents={isStage2Rolling ? 'auto' : 'none'}
+        pointerEvents={bootStage === 'STAGE_1_SHATTER' ? 'none' : 'auto'}
       >
         <ScrollView
           style={styles.scrollArea}
@@ -992,12 +993,14 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 620,
     marginBottom: 24,
+    zIndex: 50,
   },
   ctaSectionMobile: {
     flexDirection: 'column',
     width: '100%',
     maxWidth: 340,
     gap: 12,
+    zIndex: 50,
   },
   primaryCtaBtn: {
     flex: 1,
@@ -1013,6 +1016,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.45,
     shadowRadius: 14,
     elevation: 8,
+    zIndex: 50,
   },
   primaryCtaText: {
     fontSize: 16,
@@ -1022,6 +1026,7 @@ const styles = StyleSheet.create({
   googleCtaBtn: {
     flex: 1,
     minWidth: 220,
+    zIndex: 50,
   },
   learnMoreSection: {
     alignItems: 'center',
