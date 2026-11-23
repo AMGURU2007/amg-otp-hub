@@ -14,7 +14,6 @@ import { useLanguage } from '../src/i18n/LanguageContext';
 import { TopBar } from '../src/components/TopBar';
 import { OtpCard } from '../src/components/OtpCard';
 import { SourceEmailModal } from '../src/components/SourceEmailModal';
-import { LiveEmailInjectorModal } from '../src/components/LiveEmailInjectorModal';
 import { useApp } from './_layout';
 import { useOtpFeed } from '../src/hooks/useOtpFeed';
 import { db } from '../src/storage/database';
@@ -54,7 +53,6 @@ export default function OtpFeedScreen() {
   const [inspectModalVisible, setInspectModalVisible] = useState(false);
   const [inspectedEmail, setInspectedEmail] = useState<EmailMessage | null>(null);
   const [inspectedOtp, setInspectedOtp] = useState<OtpEntry | null>(null);
-  const [injectorVisible, setInjectorVisible] = useState(false);
 
   const handleOpenSourceModal = async (otp: OtpEntry) => {
     const email = await db.getEmailById(otp.emailId);
@@ -275,19 +273,8 @@ export default function OtpFeedScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Right side: Inject button & Unread Toggle */}
+        {/* Right side: Unread Toggle */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <TouchableOpacity
-            style={[
-              styles.injectBtn,
-              { backgroundColor: colors.primaryLight, borderColor: colors.primaryBorder },
-            ]}
-            onPress={() => setInjectorVisible(true)}
-          >
-            <Send size={12} color={colors.primary} />
-            <Text style={[styles.injectBtnText, { color: colors.primary }]}>+ Inject OTP</Text>
-          </TouchableOpacity>
-
           <TouchableOpacity
             style={[
               styles.unreadToggle,
@@ -343,37 +330,19 @@ export default function OtpFeedScreen() {
             </Text>
             <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
               {otps.length === 0
-                ? 'Your local OTP stream is ready. Inject a simulated incoming 2FA email or connect an active Gmail account to test parsing.'
+                ? 'Your local OTP stream is ready. Connect a Gmail account and sync to automatically extract incoming 2FA codes.'
                 : 'No OTPs match the selected filter or search query.'}
             </Text>
             <View style={styles.emptyBtnRow}>
               <TouchableOpacity
                 style={[styles.primaryActionBtn, { backgroundColor: colors.primaryBtnBg }]}
-                onPress={() => setInjectorVisible(true)}
+                onPress={() => router.push('/accounts')}
               >
-                <Sparkles size={16} color={colors.primaryBtnText} />
+                <Plus size={16} color={colors.primaryBtnText} />
                 <Text style={[styles.primaryActionBtnText, { color: colors.primaryBtnText }]}>
-                  Inject Sample OTP Email
+                  Manage Accounts
                 </Text>
               </TouchableOpacity>
-
-              {accounts.length === 0 && (
-                <TouchableOpacity
-                  style={[
-                    styles.secondaryActionBtn,
-                    {
-                      backgroundColor: colors.surfaceSecondary,
-                      borderColor: colors.borderLight,
-                    },
-                  ]}
-                  onPress={() => router.push('/accounts')}
-                >
-                  <Plus size={15} color={colors.textPrimary} />
-                  <Text style={[styles.secondaryActionBtnText, { color: colors.textPrimary }]}>
-                    Connect Account
-                  </Text>
-                </TouchableOpacity>
-              )}
             </View>
           </View>
         ) : (
@@ -397,22 +366,6 @@ export default function OtpFeedScreen() {
           </View>
         )}
       </ScrollView>
-
-      {/* Live Email Injector Modal */}
-      <LiveEmailInjectorModal
-        visible={injectorVisible}
-        onClose={() => setInjectorVisible(false)}
-        accounts={accounts}
-        onInjected={async res => {
-          await refreshAccounts();
-          await refreshOtps();
-          showToast(
-            res.otp
-              ? `OTP ${res.otp.code} detected from ${res.otp.serviceName}!`
-              : 'Email injected successfully'
-          );
-        }}
-      />
 
       {/* Source Email Modal */}
       <SourceEmailModal

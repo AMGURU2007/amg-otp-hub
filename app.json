@@ -25,7 +25,8 @@
       "permissions": [
         "INTERNET",
         "RECEIVE_BOOT_COMPLETED",
-        "VIBRATE"
+        "VIBRATE",
+        "android.permission.HIDE_OVERLAY_WINDOWS"
       ]
     },
     "web": {

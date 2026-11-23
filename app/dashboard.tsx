@@ -9,7 +9,6 @@ import { TopBar } from '../src/components/TopBar';
 import { OtpCard } from '../src/components/OtpCard';
 import { AccountContactCard } from '../src/components/AccountContactCard';
 import { SourceEmailModal } from '../src/components/SourceEmailModal';
-import { LiveEmailInjectorModal } from '../src/components/LiveEmailInjectorModal';
 import { useApp } from './_layout';
 import { useOtpFeed } from '../src/hooks/useOtpFeed';
 import { db } from '../src/storage/database';
@@ -48,7 +47,6 @@ export default function DashboardScreen() {
   const [inspectModalVisible, setInspectModalVisible] = useState(false);
   const [inspectedEmail, setInspectedEmail] = useState<EmailMessage | null>(null);
   const [inspectedOtp, setInspectedOtp] = useState<OtpEntry | null>(null);
-  const [injectorVisible, setInjectorVisible] = useState(false);
   const [emails, setEmails] = useState<EmailMessage[]>([]);
 
   const handleGoogleSignIn = async () => {
@@ -287,24 +285,6 @@ export default function DashboardScreen() {
                     Sign in with Google
                   </Text>
                 </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.secondaryActionBtn,
-                    {
-                      backgroundColor: colors.surfaceSecondary,
-                      borderColor: colors.borderLight,
-                    },
-                  ]}
-                  onPress={() => setInjectorVisible(true)}
-                  activeOpacity={0.7}
-                  {...(Platform.OS === 'web' ? ({ className: 'glow-on-click' } as any) : {})}
-                >
-                  <Send size={15} color={colors.textPrimary} />
-                  <Text style={[styles.secondaryActionBtnText, { color: colors.textPrimary }]}>
-                    {t('injectTestEmail')}
-                  </Text>
-                </TouchableOpacity>
               </View>
             </View>
           ) : (
@@ -402,21 +382,6 @@ export default function DashboardScreen() {
 
             <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
               <TouchableOpacity
-                style={[
-                  styles.quickInjectLink,
-                  { backgroundColor: colors.primaryLight, borderColor: colors.primaryBorder },
-                ]}
-                onPress={() => setInjectorVisible(true)}
-                activeOpacity={0.7}
-                {...(Platform.OS === 'web' ? ({ className: 'glow-on-click' } as any) : {})}
-              >
-                <Sparkles size={12} color={colors.primary} />
-                <Text style={[styles.quickInjectLinkText, { color: colors.primary }]}>
-                  + {t('simulateIncomingOtp')}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
                 style={styles.seeAllBtn}
                 onPress={() => router.push('/otp')}
                 activeOpacity={0.7}
@@ -455,17 +420,7 @@ export default function DashboardScreen() {
                 New incoming verification codes will appear here in real time. All {otps.length} historical codes remain safe in your OTP vault.
               </Text>
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
-                <TouchableOpacity
-                  style={[styles.primaryActionBtn, { backgroundColor: colors.primaryBtnBg }]}
-                  onPress={() => setInjectorVisible(true)}
-                >
-                  <Sparkles size={16} color={colors.primaryBtnText} />
-                  <Text style={[styles.primaryActionBtnText, { color: colors.primaryBtnText }]}>
-                    {t('simulateIncomingOtp')}
-                  </Text>
-                </TouchableOpacity>
-
-                {otps.length > 0 && (
+                {otps.length > 0 ? (
                   <TouchableOpacity
                     style={[
                       styles.secondaryActionBtn,
@@ -475,6 +430,16 @@ export default function DashboardScreen() {
                   >
                     <Text style={[styles.secondaryActionBtnText, { color: colors.textPrimary }]}>
                       View Vault ({otps.length})
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={[styles.primaryActionBtn, { backgroundColor: colors.primaryBtnBg }]}
+                    onPress={() => router.push('/accounts')}
+                  >
+                    <Users size={16} color={colors.primaryBtnText} />
+                    <Text style={[styles.primaryActionBtnText, { color: colors.primaryBtnText }]}>
+                      Manage Accounts
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -502,22 +467,6 @@ export default function DashboardScreen() {
           )}
         </View>
       </ScrollView>
-
-      {/* Live Email Injector Modal */}
-      <LiveEmailInjectorModal
-        visible={injectorVisible}
-        onClose={() => setInjectorVisible(false)}
-        accounts={accounts}
-        onInjected={async res => {
-          await refreshAccounts();
-          await refreshOtps();
-          showToast(
-            res.otp
-              ? `OTP ${res.otp.code} detected from ${res.otp.serviceName}!`
-              : 'Email injected successfully'
-          );
-        }}
-      />
 
       {/* Source Email Modal */}
       <SourceEmailModal

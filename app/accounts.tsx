@@ -14,7 +14,6 @@ import { Radius, Spacing, Typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/ThemeContext';
 import { useLanguage } from '../src/i18n/LanguageContext';
 import { TopBar } from '../src/components/TopBar';
-import { LiveEmailInjectorModal } from '../src/components/LiveEmailInjectorModal';
 import { GoogleSignInButton } from '../src/components/GoogleSignInButton';
 import { useApp } from './_layout';
 import { Account } from '../src/types';
@@ -53,7 +52,6 @@ export default function AccountsScreen() {
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
-  const [injectorVisible, setInjectorVisible] = useState(false);
 
   // Form states
   const [newLabel, setNewLabel] = useState('');
@@ -190,22 +188,6 @@ export default function AccountsScreen() {
           </View>
           <View style={styles.heroButtons}>
             <TouchableOpacity
-              style={[
-                styles.injectQuickBtn,
-                {
-                  backgroundColor: colors.surfaceSecondary,
-                  borderColor: colors.borderLight,
-                },
-              ]}
-              onPress={() => setInjectorVisible(true)}
-            >
-              <Send size={14} color={colors.primary} />
-              <Text style={[styles.injectQuickBtnText, { color: colors.primary }]}>
-                {t('injectTestEmail')}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
               style={[styles.addButton, { backgroundColor: colors.primaryBtnBg }]}
               onPress={handleOpenAdd}
               activeOpacity={0.8}
@@ -251,22 +233,6 @@ export default function AccountsScreen() {
                 <Plus size={16} color={colors.primaryBtnText} />
                 <Text style={[styles.addButtonText, { color: colors.primaryBtnText }]}>
                   {t('connectGmailBtn')}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.injectQuickBtn,
-                  {
-                    backgroundColor: colors.surfaceSecondary,
-                    borderColor: colors.borderLight,
-                  },
-                ]}
-                onPress={() => setInjectorVisible(true)}
-              >
-                <Sparkles size={14} color={colors.primary} />
-                <Text style={[styles.injectQuickBtnText, { color: colors.primary }]}>
-                  {t('injectTestEmail')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -645,21 +611,6 @@ export default function AccountsScreen() {
           </View>
         </View>
       </Modal>
-
-      {/* Live Email Injector Modal */}
-      <LiveEmailInjectorModal
-        visible={injectorVisible}
-        onClose={() => setInjectorVisible(false)}
-        accounts={accounts}
-        onInjected={async res => {
-          await refreshAccounts();
-          showToast(
-            res.otp
-              ? `OTP ${res.otp.code} detected from ${res.otp.serviceName}!`
-              : 'Email injected successfully'
-          );
-        }}
-      />
     </View>
   );
 }

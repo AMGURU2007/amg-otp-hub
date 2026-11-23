@@ -81,6 +81,13 @@ export default function SettingsScreen() {
     showToast(value ? 'Auto-copy OTP enabled' : 'Auto-copy OTP disabled');
   };
 
+  const handleToggleMaskOtps = async (value: boolean) => {
+    const updated = { ...settings, maskOtpsByDefault: value };
+    setSettings(updated);
+    await db.saveSettings({ maskOtpsByDefault: value });
+    showToast(value ? 'OTP codes masked by default' : 'OTP codes visible by default');
+  };
+
   const handleToggleNotifications = async (value: boolean) => {
     const updated = { ...settings, notificationsEnabled: value };
     setSettings(updated);
@@ -323,6 +330,23 @@ export default function SettingsScreen() {
             <Switch
               value={settings.autoCopyOtp ?? true}
               onValueChange={handleToggleAutoCopy}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={isDark ? '#edf5ff' : '#ffffff'}
+            />
+          </View>
+
+          <View style={[styles.switchRow, { borderBottomColor: colors.border }]}>
+            <View style={styles.switchTextCol}>
+              <Text style={[styles.switchTitle, { color: colors.textPrimary }]}>
+                Mask OTPs by Default
+              </Text>
+              <Text style={[styles.switchDesc, { color: colors.textSecondary }]}>
+                Hide verification digits behind security dots with tap-to-reveal to prevent on-device screen scanning and shoulder surfing
+              </Text>
+            </View>
+            <Switch
+              value={settings.maskOtpsByDefault ?? true}
+              onValueChange={handleToggleMaskOtps}
               trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor={isDark ? '#edf5ff' : '#ffffff'}
             />

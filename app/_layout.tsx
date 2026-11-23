@@ -9,6 +9,8 @@ import {
   Modal,
   ScrollView,
   Platform,
+  AppState,
+  AppStateStatus,
 } from 'react-native';
 import { Slot, useRouter, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -49,6 +51,8 @@ interface AppContextType {
   isDesktop: boolean;
   activeSession: UserSession | null;
   logout: () => Promise<void>;
+  isPrivacyVeiled: boolean;
+  setPrivacyVeiled: (veiled: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -147,8 +151,9 @@ function MainAppShell() {
   const [activeSession, setActiveSession] = useState<UserSession | null>(null);
   const [isPrivacyVeiled, setIsPrivacyVeiled] = useState(false);
 
-  // Device-Wide Anti-Screenshot & Screen Capture Protection
+  // Device-Wide Anti-Screenshot, Anti-Lens & Focus-Loss Protection
   React.useEffect(() => {
+    // 1. Android FLAG_SECURE & iOS screen capture prevention
     if (Platform.OS !== 'web') {
       (async () => {
         try {
@@ -158,16 +163,23 @@ function MainAppShell() {
           }
         } catch {}
       })();
-    } else if (typeof window !== 'undefined') {
+    }
+
+    // 2. Instant AppState listener (blocks Google Lens, Assistant context, Circle to Search & multi-window overlays)
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'inactive' || nextAppState === 'background') {
+        setIsPrivacyVeiled(true);
+      }
+    };
+    const appStateSub = AppState.addEventListener('change', handleAppStateChange);
+
+    // 3. Web Window Blur, Keydowns & Visibility Detection
+    if (typeof window !== 'undefined') {
       let veilTimeout: any = null;
 
-      const triggerVeil = (reason = 'Screenshots are disabled for OTP security.') => {
+      const triggerVeil = (reason = 'Protected — Tap to Resume') => {
         setIsPrivacyVeiled(true);
         showToast(reason);
-        clearTimeout(veilTimeout);
-        veilTimeout = setTimeout(() => {
-          setIsPrivacyVeiled(false);
-        }, 1500);
       };
 
       const handleKeyDown = (e: KeyboardEvent) => {
@@ -192,19 +204,11 @@ function MainAppShell() {
       const handleVisibilityChange = () => {
         if (document.visibilityState === 'hidden') {
           setIsPrivacyVeiled(true);
-        } else {
-          clearTimeout(veilTimeout);
-          veilTimeout = setTimeout(() => setIsPrivacyVeiled(false), 300);
         }
       };
 
       const handleWindowBlur = () => {
         setIsPrivacyVeiled(true);
-      };
-
-      const handleWindowFocus = () => {
-        clearTimeout(veilTimeout);
-        veilTimeout = setTimeout(() => setIsPrivacyVeiled(false), 200);
       };
 
       window.addEventListener('keydown', handleKeyDown, true);
@@ -215,16 +219,19 @@ function MainAppShell() {
       }, true);
       document.addEventListener('visibilitychange', handleVisibilityChange);
       window.addEventListener('blur', handleWindowBlur);
-      window.addEventListener('focus', handleWindowFocus);
 
       return () => {
+        appStateSub.remove();
         window.removeEventListener('keydown', handleKeyDown, true);
         document.removeEventListener('visibilitychange', handleVisibilityChange);
         window.removeEventListener('blur', handleWindowBlur);
-        window.removeEventListener('focus', handleWindowFocus);
         clearTimeout(veilTimeout);
       };
     }
+
+    return () => {
+      appStateSub.remove();
+    };
   }, []);
 
   React.useEffect(() => {
@@ -334,6 +341,8 @@ function MainAppShell() {
         isDesktop,
         activeSession,
         logout: handleLogout,
+        isPrivacyVeiled,
+        setPrivacyVeiled: setIsPrivacyVeiled,
       }}
     >
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -517,15 +526,24 @@ function MainAppShell() {
           </Modal>
         )}
 
-        {/* Anti-Screen Capture Privacy Veil */}
+        {/* Anti-Screen Capture & Anti-Lens Privacy Shield Overlay */}
         {isPrivacyVeiled && (
-          <View style={styles.privacyVeilOverlay} pointerEvents="none">
+          <TouchableOpacity
+            style={styles.privacyVeilOverlay}
+            activeOpacity={1}
+            onPress={() => setIsPrivacyVeiled(false)}
+          >
             <View style={styles.privacyVeilContent}>
-              <ShieldAlert size={36} color="#1a73e8" />
-              <Text style={styles.privacyVeilTitle}>Anti-Screen Capture Shield Active</Text>
-              <Text style={styles.privacyVeilSub}>Sensitive OTP verification codes are hidden for privacy</Text>
+              <ShieldAlert size={40} color="#1A73E8" />
+              <Text style={styles.privacyVeilTitle}>Protected — Tap to Resume</Text>
+              <Text style={styles.privacyVeilSub}>
+                Screen capture, OCR scanners, and background overlays are blocked to safeguard your OTP verification codes.
+              </Text>
+              <View style={styles.privacyResumeBtn}>
+                <Text style={styles.privacyResumeBtnText}>Tap Anywhere to Resume</Text>
+              </View>
             </View>
-          </View>
+          </TouchableOpacity>
         )}
 
         <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />
@@ -700,5 +718,17 @@ const styles = StyleSheet.create({
     color: '#5f6368',
     marginTop: 4,
     textAlign: 'center',
+  },
+  privacyResumeBtn: {
+    marginTop: Spacing.lg,
+    backgroundColor: '#1A73E8',
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: Radius.full,
+  },
+  privacyResumeBtnText: {
+    color: '#FFFFFF',
+    fontWeight: Typography.fontWeights.bold,
+    fontSize: Typography.fontSizes.sm,
   },
 });

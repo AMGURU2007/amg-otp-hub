@@ -1,9 +1,21 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Platform } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Platform, AppState, AppStateStatus } from 'react-native';
 import { OtpEntry } from '../types';
 import { Radius, Spacing, Typography } from '../theme/tokens';
 import { useTheme } from '../theme/ThemeContext';
-import { Copy, Check, ExternalLink, ShieldCheck, Clock, CheckCheck, Sparkles, AlertCircle } from 'lucide-react-native';
+import { db } from '../storage/database';
+import {
+  Copy,
+  Check,
+  ExternalLink,
+  ShieldCheck,
+  Clock,
+  CheckCheck,
+  Sparkles,
+  AlertCircle,
+  Eye,
+  EyeOff,
+} from 'lucide-react-native';
 
 interface OtpCardProps {
   otp: OtpEntry;
@@ -11,6 +23,7 @@ interface OtpCardProps {
   onCopy: () => void;
   onViewSource?: () => void;
   onToggleUsed?: () => void;
+  isMaskedByDefault?: boolean;
 }
 
 export const OtpCard: React.FC<OtpCardProps> = ({
@@ -19,8 +32,70 @@ export const OtpCard: React.FC<OtpCardProps> = ({
   onCopy,
   onViewSource,
   onToggleUsed,
+  isMaskedByDefault,
 }) => {
   const { colors, isDark } = useTheme();
+
+  // Tap-to-Reveal OTP Masking & Focus-Loss Protection
+  const [isRevealed, setIsRevealed] = useState(false);
+  const revealTimerRef = useRef<any>(null);
+  const maskByDefault = isMaskedByDefault ?? (() => {
+    try {
+      return db.getSettingsSync().maskOtpsByDefault ?? true;
+    } catch {
+      return true;
+    }
+  })();
+
+  const shouldMask = maskByDefault && !isRevealed;
+  const maskedDisplay = otp.code
+    ? otp.code.split('').map(() => '•').join(' ')
+    : '• • • • • •';
+
+  const handleToggleReveal = () => {
+    clearTimeout(revealTimerRef.current);
+    if (isRevealed) {
+      setIsRevealed(false);
+    } else {
+      setIsRevealed(true);
+      // Auto-mask after 10 seconds
+      revealTimerRef.current = setTimeout(() => {
+        setIsRevealed(false);
+      }, 10000);
+    }
+  };
+
+  // Instant Anti-Google-Lens / Focus-loss masking
+  useEffect(() => {
+    const handleAppState = (state: AppStateStatus) => {
+      if (state === 'inactive' || state === 'background') {
+        setIsRevealed(false);
+        clearTimeout(revealTimerRef.current);
+      }
+    };
+    const sub = AppState.addEventListener('change', handleAppState);
+
+    if (typeof window !== 'undefined') {
+      const handleBlurOrHide = () => {
+        setIsRevealed(false);
+        clearTimeout(revealTimerRef.current);
+      };
+      window.addEventListener('blur', handleBlurOrHide);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') handleBlurOrHide();
+      });
+      return () => {
+        sub.remove();
+        window.removeEventListener('blur', handleBlurOrHide);
+        clearTimeout(revealTimerRef.current);
+      };
+    }
+
+    return () => {
+      sub.remove();
+      clearTimeout(revealTimerRef.current);
+    };
+  }, []);
 
   // Confetti / Sparkle burst animation
   const burstAnim = useRef(new Animated.Value(0)).current;
@@ -173,21 +248,69 @@ export const OtpCard: React.FC<OtpCardProps> = ({
             {
               backgroundColor: colors.codeBg,
               borderColor: isCopied ? colors.emerald : colors.codeBorder,
+              ...(Platform.OS === 'web' && isRevealed
+                ? {
+                    backgroundImage:
+                      'repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(26,115,232,0.04) 4px, rgba(26,115,232,0.04) 8px)',
+                  }
+                : {}),
             },
             isCopied && { backgroundColor: colors.emeraldLight },
           ]}
           onPress={onCopy}
           activeOpacity={0.7}
-          {...(Platform.OS === 'web' ? ({ className: 'glow-on-click' } as any) : {})}
+          {...(Platform.OS === 'web'
+            ? ({ className: 'glow-on-click otp-code-secure', 'data-nosnippet': 'true' } as any)
+            : {})}
         >
+          {/* Web Anti-OCR Decoy Layer */}
+          {Platform.OS === 'web' && isRevealed && (
+            <span
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                opacity: 0.001,
+                pointerEvents: 'none',
+                userSelect: 'none',
+                fontSize: 1,
+                overflow: 'hidden',
+                height: 1,
+                width: 1,
+              }}
+            >
+              AMG_SECURE_TOKEN_SHIELD
+            </span>
+          )}
+
           <Text
             style={[
               styles.codeText,
               { color: isCopied ? colors.emerald : colors.codeText },
+              shouldMask && styles.codeMaskedText,
             ]}
           >
-            {otp.code}
+            {shouldMask ? maskedDisplay : otp.code}
           </Text>
+        </TouchableOpacity>
+
+        {/* Eye Reveal/Mask Button */}
+        <TouchableOpacity
+          style={[
+            styles.revealBtn,
+            {
+              backgroundColor: isRevealed ? colors.primaryLight : colors.surfaceSecondary,
+              borderColor: isRevealed ? colors.primaryBorder : colors.borderLight,
+            },
+          ]}
+          onPress={handleToggleReveal}
+          activeOpacity={0.7}
+          accessibilityLabel={isRevealed ? 'Mask OTP digits' : 'Reveal OTP digits'}
+        >
+          {isRevealed ? (
+            <EyeOff size={16} color={colors.primary} />
+          ) : (
+            <Eye size={16} color={colors.textSecondary} />
+          )}
         </TouchableOpacity>
 
         <View style={styles.copyButtonWrapper}>
@@ -412,6 +535,18 @@ const styles = StyleSheet.create({
     fontSize: Typography.fontSizes.xxl,
     fontWeight: Typography.fontWeights.extrabold,
     letterSpacing: 4,
+  },
+  codeMaskedText: {
+    letterSpacing: 6,
+    fontSize: Typography.fontSizes.xl,
+  },
+  revealBtn: {
+    height: 48,
+    width: 44,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   spamBadge: {
     flexDirection: 'row',

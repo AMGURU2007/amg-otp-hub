@@ -73,6 +73,7 @@ export interface AppSettings {
   demoMode: boolean;
   notifyNewOtp: boolean;
   soundEnabled: boolean;
+  maskOtpsByDefault?: boolean;
   autoCopyOtp?: boolean;
   notificationsEnabled?: boolean;
   googleClientIdWeb: string;

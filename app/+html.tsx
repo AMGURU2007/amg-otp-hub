@@ -127,11 +127,13 @@ export default function Root({ children }: { children: React.ReactNode }) {
               }
             }
 
-            /* Anti-Screen Capture & Text Protection */
+            /* Anti-Screen Capture & Anti-OCR Protection */
             .otp-code-secure, [data-secure-otp="true"] {
               user-select: none !important;
               -webkit-user-select: none !important;
               -ms-user-select: none !important;
+              -webkit-touch-callout: none !important;
+              text-rendering: optimizeLegibility;
             }
 
             @media print {

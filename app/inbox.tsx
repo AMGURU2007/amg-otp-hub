@@ -15,7 +15,6 @@ import { useLanguage } from '../src/i18n/LanguageContext';
 import { TopBar } from '../src/components/TopBar';
 import { EmailRow } from '../src/components/EmailRow';
 import { SourceEmailModal } from '../src/components/SourceEmailModal';
-import { LiveEmailInjectorModal } from '../src/components/LiveEmailInjectorModal';
 import { useApp } from './_layout';
 import { db } from '../src/storage/database';
 import { EmailMessage, OtpEntry } from '../src/types';
@@ -62,7 +61,6 @@ export default function InboxScreen() {
   const [inspectModalVisible, setInspectModalVisible] = useState(false);
   const [inspectedEmail, setInspectedEmail] = useState<EmailMessage | null>(null);
   const [highlightOtp, setHighlightOtp] = useState<OtpEntry | null>(null);
-  const [injectorVisible, setInjectorVisible] = useState(false);
 
   const loadEmails = useCallback(async () => {
     if (!activeAccount) {
@@ -168,22 +166,6 @@ export default function InboxScreen() {
                 <Plus size={16} color={colors.primaryBtnText} />
                 <Text style={[styles.primaryActionBtnText, { color: colors.primaryBtnText }]}>
                   Connect Account
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.secondaryActionBtn,
-                  {
-                    backgroundColor: colors.surfaceSecondary,
-                    borderColor: colors.borderLight,
-                  },
-                ]}
-                onPress={() => setInjectorVisible(true)}
-              >
-                <Sparkles size={15} color={colors.primary} />
-                <Text style={[styles.secondaryActionBtnText, { color: colors.primary }]}>
-                  Inject Sample Email
                 </Text>
               </TouchableOpacity>
             </View>
@@ -540,21 +522,6 @@ export default function InboxScreen() {
                   </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={[
-                    styles.injectEmailBtn,
-                    {
-                      backgroundColor: colors.primaryLight,
-                      borderColor: colors.primaryBorder,
-                    },
-                  ]}
-                  onPress={() => setInjectorVisible(true)}
-                >
-                  <Send size={12} color={colors.primary} />
-                  <Text style={[styles.injectEmailBtnText, { color: colors.primary }]}>
-                    + Inject
-                  </Text>
-                </TouchableOpacity>
               </View>
             </View>
 
@@ -576,17 +543,22 @@ export default function InboxScreen() {
                   <Text style={[styles.emptyDesc, { color: colors.textMuted }]}>
                     {filterOtpsOnly
                       ? 'No verification code emails detected in this account.'
-                      : 'This inbox has no messages yet. Click Inject to simulate an incoming email.'}
+                      : 'This inbox has no messages yet. Sync your connected Gmail account to pull messages.'}
                   </Text>
-                  <TouchableOpacity
-                    style={[styles.primaryActionBtn, { backgroundColor: colors.primaryBtnBg }]}
-                    onPress={() => setInjectorVisible(true)}
-                  >
-                    <Send size={15} color={colors.primaryBtnText} />
-                    <Text style={[styles.primaryActionBtnText, { color: colors.primaryBtnText }]}>
-                      Inject Sample Email
-                    </Text>
-                  </TouchableOpacity>
+                  {activeAccount && (
+                    <TouchableOpacity
+                      style={[styles.primaryActionBtn, { backgroundColor: colors.primaryBtnBg }]}
+                      onPress={async () => {
+                        await syncAccount(activeAccount.id);
+                        await loadEmails();
+                      }}
+                    >
+                      <RefreshCw size={15} color={colors.primaryBtnText} />
+                      <Text style={[styles.primaryActionBtnText, { color: colors.primaryBtnText }]}>
+                        Sync Account Now
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               ) : (
                 <View style={styles.emailContainer}>
@@ -603,22 +575,6 @@ export default function InboxScreen() {
           </View>
         </View>
       )}
-
-      {/* Live Email Injector Modal */}
-      <LiveEmailInjectorModal
-        visible={injectorVisible}
-        onClose={() => setInjectorVisible(false)}
-        accounts={accounts}
-        onInjected={async res => {
-          await refreshAccounts();
-          await loadEmails();
-          showToast(
-            res.otp
-              ? `OTP ${res.otp.code} detected from ${res.otp.serviceName}!`
-              : 'Email injected successfully'
-          );
-        }}
-      />
 
       {/* Source Email Reader Modal */}
       <SourceEmailModal

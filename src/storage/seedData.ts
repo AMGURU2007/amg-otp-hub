@@ -12,6 +12,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   demoMode: false,
   notifyNewOtp: true,
   soundEnabled: true,
+  maskOtpsByDefault: true,
   googleClientIdWeb: '',
   googleClientIdAndroid: '',
   googleClientIdDesktop: '',
