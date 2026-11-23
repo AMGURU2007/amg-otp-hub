@@ -44,7 +44,7 @@ export default function WelcomeScreen() {
   const { isDark, colors, toggleTheme, theme, setTheme } = useTheme();
   const { t, language, setLanguage, languages, currentLanguageInfo } = useLanguage();
   const { width } = useWindowDimensions();
-  const { showToast, activeSession } = useApp();
+  const { showToast, activeSession, accounts } = useApp();
 
   const isMobile = width < 768;
   const [showLearnMore, setShowLearnMore] = useState(false);
@@ -664,38 +664,63 @@ export default function WelcomeScreen() {
             })}
           </View>
 
-          {/* 6. ACTION BUTTONS: GET STARTED & SIGN IN WITH GOOGLE */}
+          {/* 6. ACTION BUTTONS: OFFICIAL GOOGLE SIGN IN & OPEN DASHBOARD */}
           <View style={[styles.ctaSection, isMobile && styles.ctaSectionMobile]}>
-            {/* Primary CTA: Get Started */}
-            <TouchableOpacity
-              style={[
-                styles.primaryCtaBtn,
-                {
-                  backgroundColor: colors.primaryBtnBg,
-                  shadowColor: colors.primaryBtnShadow,
-                },
-              ]}
-              onPress={() => router.push('/dashboard')}
-              activeOpacity={0.7}
-              {...(Platform.OS === 'web' ? ({ className: 'glow-on-click' } as any) : {})}
-            >
-              <Text
-                style={[
-                  styles.primaryCtaText,
-                  { color: colors.primaryBtnText },
-                ]}
-              >
-                {t('getStarted')}
-              </Text>
-              <ArrowRight size={20} color={colors.primaryBtnText} />
-            </TouchableOpacity>
-
-            {/* Secondary CTA: Official White Google Sign In Button */}
+            {/* Primary Action: Official Google Sign-In Button */}
             <GoogleSignInButton
               style={styles.googleCtaBtn}
               onPress={handleGoogleSignIn}
-              label={activeSession ? `Connected as ${activeSession.email}` : t('signInWithGoogle')}
+              label={accounts.length > 0 ? "Add another Google account" : "Sign in with Google"}
             />
+
+            {/* Secondary Action: Open Dashboard / Get Started */}
+            {accounts.length > 0 ? (
+              <TouchableOpacity
+                style={[
+                  styles.primaryCtaBtn,
+                  {
+                    backgroundColor: colors.primaryBtnBg,
+                    shadowColor: colors.primaryBtnShadow,
+                  },
+                ]}
+                onPress={() => router.push('/dashboard')}
+                activeOpacity={0.7}
+                {...(Platform.OS === 'web' ? ({ className: 'glow-on-click' } as any) : {})}
+              >
+                <Text
+                  style={[
+                    styles.primaryCtaText,
+                    { color: colors.primaryBtnText },
+                  ]}
+                >
+                  Open Dashboard ({accounts.length})
+                </Text>
+                <ArrowRight size={18} color={colors.primaryBtnText} />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[
+                  styles.secondaryCtaBtn,
+                  {
+                    backgroundColor: colors.surfaceSecondary,
+                    borderColor: colors.borderLight,
+                  },
+                ]}
+                onPress={() => router.push('/dashboard')}
+                activeOpacity={0.7}
+                {...(Platform.OS === 'web' ? ({ className: 'glow-on-click' } as any) : {})}
+              >
+                <Text
+                  style={[
+                    styles.secondaryCtaText,
+                    { color: colors.textPrimary },
+                  ]}
+                >
+                  {t('getStarted')}
+                </Text>
+                <ArrowRight size={16} color={colors.textPrimary} />
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* 7. LEARN MORE ACCORDION */}
@@ -1027,6 +1052,23 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 220,
     zIndex: 50,
+  },
+  secondaryCtaBtn: {
+    flex: 1,
+    minWidth: 220,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: Radius.full,
+    borderWidth: 1,
+    zIndex: 50,
+  },
+  secondaryCtaText: {
+    fontSize: 15,
+    fontWeight: '600',
   },
   learnMoreSection: {
     alignItems: 'center',

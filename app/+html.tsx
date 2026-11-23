@@ -136,6 +136,25 @@ export default function Root({ children }: { children: React.ReactNode }) {
               text-rendering: optimizeLegibility;
             }
 
+            /* Official Google Sign-In Button Hover & Active States */
+            .google-signin-btn {
+              transition: background-color 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease !important;
+            }
+            .google-signin-btn-light:hover {
+              background-color: #F8FAFD !important;
+              box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15) !important;
+            }
+            .google-signin-btn-light:active {
+              background-color: #E8EAED !important;
+            }
+            .google-signin-btn-dark:hover {
+              background-color: #1F1F21 !important;
+              box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+            }
+            .google-signin-btn-dark:active {
+              background-color: #2D2E30 !important;
+            }
+
             @media print {
               body, html {
                 display: none !important;

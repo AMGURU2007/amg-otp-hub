@@ -9,6 +9,7 @@ import { TopBar } from '../src/components/TopBar';
 import { OtpCard } from '../src/components/OtpCard';
 import { AccountContactCard } from '../src/components/AccountContactCard';
 import { SourceEmailModal } from '../src/components/SourceEmailModal';
+import { GoogleSignInButton } from '../src/components/GoogleSignInButton';
 import { useApp } from './_layout';
 import { useOtpFeed } from '../src/hooks/useOtpFeed';
 import { db } from '../src/storage/database';
@@ -229,15 +230,11 @@ export default function DashboardScreen() {
               </Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <TouchableOpacity
-                style={[styles.addAccountHeaderBtn, { backgroundColor: colors.primary, zIndex: 30 }]}
+              <GoogleSignInButton
                 onPress={handleGoogleSignIn}
-                activeOpacity={0.7}
-                {...(Platform.OS === 'web' ? ({ className: 'glow-on-click' } as any) : {})}
-              >
-                <Plus size={14} color="#ffffff" />
-                <Text style={styles.addAccountHeaderBtnText}>Add Gmail</Text>
-              </TouchableOpacity>
+                label="Add Gmail"
+                style={{ minWidth: 130, height: 36, minHeight: 36, paddingLeft: 8, paddingRight: 12, zIndex: 30 }}
+              />
 
               <TouchableOpacity
                 style={styles.seeAllBtn}
@@ -274,17 +271,10 @@ export default function DashboardScreen() {
                 {t('noAccountsDesc')}
               </Text>
               <View style={styles.emptyStateBtnRow}>
-                <TouchableOpacity
-                  style={[styles.primaryActionBtn, { backgroundColor: colors.primaryBtnBg, zIndex: 30 }]}
+                <GoogleSignInButton
                   onPress={handleGoogleSignIn}
-                  activeOpacity={0.7}
-                  {...(Platform.OS === 'web' ? ({ className: 'glow-on-click' } as any) : {})}
-                >
-                  <Plus size={16} color={colors.primaryBtnText} />
-                  <Text style={[styles.primaryActionBtnText, { color: colors.primaryBtnText }]}>
-                    Sign in with Google
-                  </Text>
-                </TouchableOpacity>
+                  label="Sign in with Google"
+                />
               </View>
             </View>
           ) : (

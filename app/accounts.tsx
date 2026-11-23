@@ -187,16 +187,12 @@ export default function AccountsScreen() {
             </Text>
           </View>
           <View style={styles.heroButtons}>
-            <TouchableOpacity
-              style={[styles.addButton, { backgroundColor: colors.primaryBtnBg }]}
-              onPress={handleOpenAdd}
-              activeOpacity={0.8}
-            >
-              <Plus size={16} color={colors.primaryBtnText} />
-              <Text style={[styles.addButtonText, { color: colors.primaryBtnText }]}>
-                + {t('connectGmailBtn')}
-              </Text>
-            </TouchableOpacity>
+            <GoogleSignInButton
+              onPress={handleGoogleSignInFlow}
+              label="Connect Gmail"
+              disabled={isSubmitting}
+              style={{ minWidth: 150, height: 38, minHeight: 38, paddingLeft: 10, paddingRight: 14 }}
+            />
           </View>
         </View>
 
@@ -226,15 +222,11 @@ export default function AccountsScreen() {
               {t('noAccountsDesc')}
             </Text>
             <View style={styles.emptyBtnRow}>
-              <TouchableOpacity
-                style={[styles.addButton, { backgroundColor: colors.primaryBtnBg }]}
-                onPress={handleOpenAdd}
-              >
-                <Plus size={16} color={colors.primaryBtnText} />
-                <Text style={[styles.addButtonText, { color: colors.primaryBtnText }]}>
-                  {t('connectGmailBtn')}
-                </Text>
-              </TouchableOpacity>
+              <GoogleSignInButton
+                onPress={handleGoogleSignInFlow}
+                label="Sign in with Google"
+                disabled={isSubmitting}
+              />
             </View>
           </View>
         ) : (
