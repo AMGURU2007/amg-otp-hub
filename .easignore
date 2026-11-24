@@ -1,0 +1,16 @@
+# Ignore local native directories - allows EAS to generate a clean, cloud-native prebuild
+android/
+ios/
+
+# Ignore desktop releases and build distributions
+release-builds/
+dist/
+web-build/
+desktop/
+
+# Ignore caches and environments
+node_modules/
+.expo/
+.git/
+*.log
+.env.local

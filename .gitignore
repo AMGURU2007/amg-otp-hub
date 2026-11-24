@@ -2,6 +2,12 @@ node_modules/
 .expo/
 dist/
 web-build/
+release-builds/
+*.apk
+*.exe
+android/
+ios/
+local.properties
 .env
 .env.local
 .env*.local
